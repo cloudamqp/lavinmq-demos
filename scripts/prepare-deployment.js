@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { copyFileSync, mkdirSync, existsSync, cpSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, cpSync } from 'fs';
 import { join } from 'path';
 
 const PUBLIC_DIR = 'public';
@@ -141,13 +141,6 @@ const indexHtml = `<!DOCTYPE html>
 </html>`;
 
 const indexPath = join(PUBLIC_DIR, 'index.html');
-copyFileSync(
-  new URL(`data:text/html,${encodeURIComponent(indexHtml)}`),
-  indexPath
-);
-
-// Fallback: write using fs
-import { writeFileSync } from 'fs';
 writeFileSync(indexPath, indexHtml);
 console.log(`\n✅ Deployment ready in ./${PUBLIC_DIR}/`);
 console.log('\nDemo URLs:');

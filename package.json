@@ -2,6 +2,7 @@
   "name": "lavinmq-demos",
   "version": "1.0.0",
   "description": "Collection of LavinMQ demonstration applications",
+  "type": "module",
   "private": true,
   "scripts": {
     "build": "npm run build:static",
