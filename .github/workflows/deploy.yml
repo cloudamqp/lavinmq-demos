@@ -31,5 +31,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
-          # The gh-pages branch will be created automatically on first run
-          # Add 'cname: your-domain.com' if using a custom domain
+          cname: demo.lavinmq.com
