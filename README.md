@@ -8,7 +8,12 @@ LavinMQ is a high-performance message queue server implementing the AMQP protoco
 
 ## Demos
 
-### 🗨️ [Chat App](./chat-app)
+Demos are organized into two categories:
+
+- **Static Demos**: Client-side applications deployed to S3/GitHub Pages
+- **Backend Demos**: Server applications deployed to Heroku, fly.io, etc.
+
+### 🗨️ [Chat App](./chat-app) _(Static)_
 
 A real-time chat application demonstrating:
 - **Zero-backend architecture** - Pure client-side app using AMQP streams
@@ -20,6 +25,10 @@ A real-time chat application demonstrating:
 Perfect for learning how to build modern real-time applications with LavinMQ.
 
 [View Chat App Demo →](./chat-app)
+
+---
+
+_More demos coming soon! Backend demos (Node.js workers, Ruby consumers, etc.) will be added with their own deployment instructions._
 
 ## Getting Started
 
@@ -40,6 +49,14 @@ docker run -d --name lavinmq -p 5672:5672 -p 15672:15672 -p 15692:15692 \
 # See https://lavinmq.com/documentation/install
 ```
 
+## Deployment
+
+All static demos are automatically deployed to GitHub Pages on push to `main`. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details on:
+
+- Building and deploying static demos (S3, GitHub Pages, Netlify)
+- Adding new static or backend demos
+- Environment configuration
+
 ## Contributing
 
 Have an idea for a demo? Contributions are welcome! Each demo should:
@@ -47,6 +64,8 @@ Have an idea for a demo? Contributions are welcome! Each demo should:
 - Include clear documentation and setup instructions
 - Follow best practices for the language/framework used
 - Be self-contained in its own directory
+- Static demos: Include Vite/build config with `base` path support
+- Backend demos: Include their own deployment guide
 
 ## Resources
 

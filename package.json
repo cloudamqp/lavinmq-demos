@@ -1,0 +1,19 @@
+{
+  "name": "lavinmq-demos",
+  "version": "1.0.0",
+  "description": "Collection of LavinMQ demonstration applications",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:static",
+    "build:static": "npm run build:chat",
+    "build:chat": "cd chat-app && npm install && VITE_BASE_PATH=/chat npm run build",
+    "deploy:prepare": "node scripts/prepare-deployment.js",
+    "deploy": "npm run build:static && npm run deploy:prepare"
+  },
+  "keywords": [
+    "lavinmq",
+    "amqp",
+    "demos"
+  ],
+  "license": "MIT"
+}
