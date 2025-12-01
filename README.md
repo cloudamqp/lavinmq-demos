@@ -32,40 +32,36 @@ _More demos coming soon! Backend demos (Node.js workers, Ruby consumers, etc.) w
 
 ## Getting Started
 
-Each demo has its own README with specific setup instructions. Generally, you'll need:
+Each demo has its own README with setup instructions. To get started:
 
-1. **LavinMQ** running locally or accessible via network
-2. **Node.js** 18+ for web-based demos
-3. Demo-specific dependencies (see individual READMEs)
+1. **Run LavinMQ** locally or use a hosted instance
+2. **Check the demo's README** for specific setup
+3. **Run locally** using the demo's dev tools
 
 ### Quick Start with LavinMQ
 
 ```bash
-# Docker (recommended for demos)
+# Docker
 docker run -d --name lavinmq -p 5672:5672 -p 15672:15672 -p 15692:15692 \
   cloudamqp/lavinmq:latest
 
-# Or install directly
-# See https://lavinmq.com/documentation/install
+# Or install directly: https://lavinmq.com/documentation/install
 ```
 
 ## Deployment
 
-All static demos are automatically deployed to GitHub Pages on push to `main`. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details on:
-
-- Building and deploying static demos (S3, GitHub Pages, Netlify)
-- Adding new static or backend demos
-- Environment configuration
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for:
+- Building static demos
+- Deployment options
+- Adding new demos
 
 ## Contributing
 
 Have an idea for a demo? Contributions are welcome! Each demo should:
 - Showcase a specific LavinMQ feature or use case
 - Include clear documentation and setup instructions
-- Follow best practices for the language/framework used
 - Be self-contained in its own directory
-- Static demos: Include Vite/build config with `base` path support
-- Backend demos: Include their own deployment guide
+- Follow best practices for the language/framework used
 
 ## Resources
 
