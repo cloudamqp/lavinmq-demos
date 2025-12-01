@@ -25,12 +25,12 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.0.0",
-    "@vitest/ui": "^2.0.0",
+    "@vitest/ui": "^4.0.14",
     "eslint": "^9.0.0",
     "globals": "^15.0.0",
     "prettier": "^3.0.0",
-    "vite": "^5.0.0",
-    "vitest": "^2.0.0"
+    "vite": "^7.2.6",
+    "vitest": "^4.0.14"
   },
   "dependencies": {
     "@cloudamqp/amqp-client": "^3.1.1",
