@@ -1,9 +1,10 @@
 /**
  * AMQP Connection Manager
  * Handles WebSocket connection to LavinMQ AMQP broker using CloudAMQP client
+ * Supports both basic authentication and OAuth2 token authentication
  */
 
-import { AMQPWebSocketClient } from '@cloudamqp/amqp-client/amqp-websocket-client';
+import { AMQPWebSocketClient } from '@cloudamqp/amqp-client';
 
 class AmqpConnectionManager extends EventTarget {
   constructor() {
@@ -15,6 +16,7 @@ class AmqpConnectionManager extends EventTarget {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
+    this.oauthToken = null; // OAuth access token if using OAuth
 
     // Use environment variables for connection details
     this.config = {
@@ -24,6 +26,14 @@ class AmqpConnectionManager extends EventTarget {
       username: import.meta.env.VITE_AMQP_USERNAME || 'guest',
       password: import.meta.env.VITE_AMQP_PASSWORD || 'guest',
     };
+  }
+
+  /**
+   * Set OAuth token for authentication
+   * When set, this token will be used as the password in AMQP connection
+   */
+  setOAuthToken(token) {
+    this.oauthToken = token;
   }
 
   async connect() {
@@ -38,11 +48,15 @@ class AmqpConnectionManager extends EventTarget {
       // Connect to LavinMQ using CloudAMQP WebSocket client
       const url = `ws://${this.config.hostname}:${this.config.port}`;
 
+      // Use OAuth token as password if available, otherwise use configured credentials
+      const username = this.oauthToken ? 'oauth' : this.config.username;
+      const password = this.oauthToken || this.config.password;
+
       this.connection = new AMQPWebSocketClient(
         url,
         this.config.vhost,
-        this.config.username,
-        this.config.password
+        username,
+        password
       );
 
       await this.connection.connect();

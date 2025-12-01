@@ -15,7 +15,9 @@ class ChatChannelManager extends EventTarget {
   }
 
   async createChannel(channelName) {
+    console.log('[DEBUG] createChannel called for:', channelName);
     if (this.channels.has(channelName)) {
+      console.log('[DEBUG] Channel already exists:', channelName);
       return this.channels.get(channelName);
     }
 
@@ -26,6 +28,7 @@ class ChatChannelManager extends EventTarget {
 
     // Create a stream for this channel using WebSocket client API
     const queueName = `chat-stream-${channelName}`;
+    console.log('[DEBUG] Creating queue:', queueName);
     const channel = await connection.channel()
     await channel.basicQos(1000);
     const queue = await channel.queue(queueName,
@@ -37,7 +40,9 @@ class ChatChannelManager extends EventTarget {
         'x-max-age': '1h'
       }
     );
+    console.log('[DEBUG] Queue created, binding to exchange');
     await queue.bind("amq.topic", channelName);
+    console.log('[DEBUG] Queue bound successfully');
 
     const channelInfo = {
       name: channelName,
@@ -46,6 +51,7 @@ class ChatChannelManager extends EventTarget {
     };
 
     this.channels.set(channelName, channelInfo);
+    console.log('[DEBUG] Channel added to Map, size:', this.channels.size);
     this.dispatchEvent(
       new CustomEvent('channelCreated', {
         detail: { channelName },
@@ -56,14 +62,18 @@ class ChatChannelManager extends EventTarget {
   }
 
   async subscribeToChannel(channelName, username) {
+    console.log('[DEBUG] subscribeToChannel called for:', channelName, 'username:', username);
     const channelInfo = await this.createChannel(channelName);
+    console.log('[DEBUG] Got channelInfo:', !!channelInfo);
 
     if (channelInfo.consumer) {
+      console.log('[DEBUG] Already subscribed to channel:', channelName);
       // Already subscribed
       return;
     }
 
     // Subscribe using WebSocket client API
+    console.log('[DEBUG] Starting subscription...');
     const consumer = await channelInfo.queue.subscribe(
       {
         args: {
@@ -81,6 +91,7 @@ class ChatChannelManager extends EventTarget {
     this.activeChannel = channelName;
 
     // Send join message
+    console.log('[DEBUG] Sending join message...');
     await this.sendSystemMessage(channelName, `${username} joined the channel`);
 
     this.dispatchEvent(
@@ -88,6 +99,7 @@ class ChatChannelManager extends EventTarget {
         detail: { channelName },
       })
     );
+    console.log('[DEBUG] subscribeToChannel completed');
   }
 
   async unsubscribeFromChannel(channelName, username) {
@@ -111,7 +123,11 @@ class ChatChannelManager extends EventTarget {
   }
 
   async sendMessage(channelName, username, content) {
+    console.log('[DEBUG] sendMessage called for channel:', channelName);
+    console.log('[DEBUG] channels Map size:', this.channels.size);
+    console.log('[DEBUG] channels Map keys:', Array.from(this.channels.keys()));
     const channelInfo = this.channels.get(channelName);
+    console.log('[DEBUG] channelInfo found:', !!channelInfo);
     if (!channelInfo) {
       throw new Error(`Channel ${channelName} not found`);
     }

@@ -126,9 +126,48 @@ class ChatUIManager {
     });
   }
 
-  showUsernameModal() {
+  showUsernameModal(isOAuthConfigured = false, oauthLoginCallback = null) {
+    // Store OAuth callback for later use
+    if (oauthLoginCallback) {
+      this._oauthLoginCallback = oauthLoginCallback;
+    }
+
+    // If OAuth is configured, show OAuth button and hide username input
+    if (isOAuthConfigured) {
+      this.usernameInput.style.display = 'none';
+      const submitButton = this.usernameModal.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.style.display = 'none';
+
+      // Add OAuth login button if not already present
+      let oauthButton = this.usernameModal.querySelector('.oauth-login-btn');
+      if (!oauthButton) {
+        oauthButton = document.createElement('button');
+        oauthButton.type = 'button';
+        oauthButton.className = 'oauth-login-btn';
+        oauthButton.textContent = 'Sign in with GitHub';
+        oauthButton.style.cssText = `
+          padding: 12px 24px;
+          background: #24292e;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 16px;
+          cursor: pointer;
+          margin-top: 10px;
+        `;
+        oauthButton.addEventListener('click', () => {
+          if (this._oauthLoginCallback) {
+            this._oauthLoginCallback();
+          }
+        });
+        this.usernameModal.querySelector('.modal-content').appendChild(oauthButton);
+      }
+    }
+
     this.usernameModal.style.display = 'flex';
-    this.usernameInput.focus();
+    if (!isOAuthConfigured) {
+      this.usernameInput.focus();
+    }
   }
 
   hideUsernameModal() {
@@ -136,12 +175,16 @@ class ChatUIManager {
   }
 
   async handleUsernameSubmit() {
-    const username = this.usernameInput.value.trim();
+    console.log('[DEBUG] handleUsernameSubmit called');
+    // Use already-set username (from OAuth) or read from input field
+    const username = this.username || this.usernameInput.value.trim();
     if (!username || username.length > 20) {
+      console.log('[DEBUG] Invalid username:', username, 'length:', username?.length);
       return;
     }
 
     this.username = username;
+    console.log('[DEBUG] Username set to:', username);
     this.hideUsernameModal();
 
     // Update page title to include username
@@ -149,11 +192,15 @@ class ChatUIManager {
 
     // Subscribe to default channel and user notifications
     try {
+      console.log('[DEBUG] About to subscribe to default channel:', this.defaultChannel);
       await this.channelManager.subscribeToChannel(this.defaultChannel, this.username);
+      console.log('[DEBUG] Subscribed to default channel');
       this.subscribedChannels.add(this.defaultChannel);
 
       // Subscribe to user-specific notifications for DMs
+      console.log('[DEBUG] About to subscribe to user notifications');
       await this.channelManager.subscribeToUserNotifications(this.username);
+      console.log('[DEBUG] Subscribed to user notifications');
 
       // Add default channel to UI
       this.addChannelToUI(this.defaultChannel);
@@ -166,8 +213,10 @@ class ChatUIManager {
       this.updateUsersList();
 
       this.enableChatInterface();
+      console.log('[DEBUG] handleUsernameSubmit completed successfully');
     } catch (error) {
       console.error('Failed to join channel:', error);
+      console.error('[DEBUG] Error stack:', error.stack);
       this.showError('Failed to join chat. Please try again.');
     }
   }
@@ -563,6 +612,10 @@ class ChatUIManager {
 
   getUsername() {
     return this.username;
+  }
+
+  setUsername(username) {
+    this.username = username;
   }
 
   handleChannelUnsubscribed(_channelName) {
