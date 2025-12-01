@@ -1,44 +1,59 @@
-# WamsChat
+# LavinMQ Demos
 
-A client-side chat application using AMQP streams over WebSockets.
+A collection of demonstration applications showcasing [LavinMQ](https://lavinmq.com) features and capabilities.
 
-![WamsChat Screenshot](resources/screenshot.png)
+## What is LavinMQ?
 
-## Features
+LavinMQ is a high-performance message queue server implementing the AMQP protocol. It's designed to be fast, lightweight, and easy to deploy, making it perfect for everything from small projects to large-scale distributed systems.
 
-- 🚀 **Zero Backend**: Pure client-side application using AMQP streams
-- 🔐 **OAuth2 Authentication**: Sign in with GitHub (or any OAuth provider)
-- 💬 **Real-time Chat**: Instant messaging across multiple channels
-- 📱 **Direct Messages**: Private messaging between users
-- 🌊 **AMQP Streams**: Message persistence with LavinMQ
+## Demos
 
-## Prerequisites
+### 🗨️ [Chat App](./chat-app)
 
-- **LavinMQ** running on `localhost:15692` (WebSocket port)
-- **Node.js** 18+ for development
+A real-time chat application demonstrating:
+- **Zero-backend architecture** - Pure client-side app using AMQP streams
+- **OAuth2 authentication** - Secure sign-in with GitHub or other providers
+- **WebSocket connectivity** - Direct browser-to-LavinMQ communication
+- **AMQP streams** - Message persistence and real-time delivery
+- **Multi-channel support** - Public channels and direct messages
+
+Perfect for learning how to build modern real-time applications with LavinMQ.
+
+[View Chat App Demo →](./chat-app)
 
 ## Getting Started
 
+Each demo has its own README with specific setup instructions. Generally, you'll need:
+
+1. **LavinMQ** running locally or accessible via network
+2. **Node.js** 18+ for web-based demos
+3. Demo-specific dependencies (see individual READMEs)
+
+### Quick Start with LavinMQ
+
 ```bash
-# Install and run
-npm install
-npm run dev
+# Docker (recommended for demos)
+docker run -d --name lavinmq -p 5672:5672 -p 15672:15672 -p 15692:15692 \
+  cloudamqp/lavinmq:latest
+
+# Or install directly
+# See https://lavinmq.com/documentation/install
 ```
 
-Open <http://localhost:3001> to start chatting.
+## Contributing
 
-## OAuth2 Setup (Optional)
+Have an idea for a demo? Contributions are welcome! Each demo should:
+- Showcase a specific LavinMQ feature or use case
+- Include clear documentation and setup instructions
+- Follow best practices for the language/framework used
+- Be self-contained in its own directory
 
-Want to use "Sign in with GitHub" instead of hardcoded credentials?
+## Resources
 
-See [OAUTH_SETUP.md](OAUTH_SETUP.md) for complete setup instructions.
+- [LavinMQ Documentation](https://lavinmq.com/documentation)
+- [LavinMQ GitHub](https://github.com/cloudamqp/lavinmq)
+- [AMQP Protocol](https://www.amqp.org/)
 
-Quick summary:
-1. Register GitHub OAuth App
-2. Configure LavinMQ with OAuth2 userinfo endpoint
-3. Set `VITE_OAUTH_CLIENT_ID` in `.env`
-4. Done! LavinMQ validates tokens, no extra backend needed.
+## License
 
-## How It Works
-
-The app connects directly to LavinMQ via WebSocket using `amqp-client.js`. Each chat channel is an AMQP stream, providing real-time messaging with built-in persistence.
+Each demo may have its own license. See individual demo directories for details.
