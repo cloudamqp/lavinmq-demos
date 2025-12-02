@@ -46,7 +46,9 @@ class AmqpConnectionManager extends EventTarget {
 
     try {
       // Connect to LavinMQ using CloudAMQP WebSocket client
-      const url = `ws://${this.config.hostname}:${this.config.port}`;
+      // Use wss:// if page is loaded over HTTPS, ws:// otherwise
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+      const url = `${protocol}://${this.config.hostname}:${this.config.port}`;
 
       // Use OAuth token as password if available, otherwise use configured credentials
       const username = this.oauthToken ? 'oauth' : this.config.username;
