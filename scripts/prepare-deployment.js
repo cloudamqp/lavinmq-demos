@@ -151,6 +151,33 @@ const indexHtml = `<!DOCTYPE html>
 
 const indexPath = join(PUBLIC_DIR, 'index.html');
 writeFileSync(indexPath, indexHtml);
+
+// Create root 404.html for GitHub Pages SPA routing
+const notFoundHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <script>
+    // GitHub Pages SPA redirect for /chat routes
+    const path = window.location.pathname;
+    if (path.startsWith('/chat')) {
+      // Preserve query params and redirect to /chat/
+      window.location.replace('/chat/' + window.location.search);
+    } else {
+      // For other 404s, redirect to home
+      window.location.replace('/');
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>`;
+
+const notFoundPath = join(PUBLIC_DIR, '404.html');
+writeFileSync(notFoundPath, notFoundHtml);
+
 console.log(`\n✅ Deployment ready in ./${PUBLIC_DIR}/`);
 console.log('\nDemo URLs:');
 console.log('  / (root)         → Demo index');
