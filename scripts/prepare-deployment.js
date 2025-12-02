@@ -25,6 +25,15 @@ for (const demo of DEMOS) {
 
   console.log(`📁 Copying ${demo.name} demo...`);
   cpSync(demo.source, destPath, { recursive: true });
+
+  // Copy index.html as 404.html for SPA routing on GitHub Pages
+  const indexFile = join(destPath, 'index.html');
+  const notFoundFile = join(destPath, '404.html');
+  if (existsSync(indexFile)) {
+    cpSync(indexFile, notFoundFile);
+    console.log(`   ✓ Created 404.html for SPA routing`);
+  }
+
   console.log(`   ✓ Deployed to ${destPath}`);
 }
 
