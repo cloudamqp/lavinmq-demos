@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WamsChat - AMQP Stream Chat</title>
+    <script type="module" crossorigin src="/chat/assets/index-CHi4ydEV.js"></script>
+    <link rel="stylesheet" crossorigin href="/chat/assets/index-KPCzd09i.css">
+  </head>
+
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <h1>WamsChat</h1>
+        <div class="connection-status" id="connectionStatus">
+          <span class="status-indicator"></span>
+          <span class="status-text">Disconnected</span>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <aside class="sidebar">
+          <div class="channels-section">
+            <h3>Channels</h3>
+            <div class="channel-list" id="channelList">
+              <!-- Channels will be populated dynamically -->
+            </div>
+            <div class="add-channel">
+              <input type="text" id="newChannelInput" placeholder="Add channel..." maxlength="50" />
+              <button id="addChannelBtn" type="button">+</button>
+            </div>
+          </div>
+
+          <div class="users-section">
+            <h3>Active Users</h3>
+            <div class="users-list" id="usersList">
+              <!-- Active users will be populated here -->
+            </div>
+          </div>
+
+          <div class="dm-section">
+            <h3>Direct Messages</h3>
+            <div class="dm-list" id="dmList">
+              <!-- Direct message conversations will be populated here -->
+            </div>
+          </div>
+        </aside>
+
+        <section class="chat-area">
+          <div class="chat-header">
+            <h2 id="currentChannelName"></h2>
+            <div class="chat-info">
+              <span id="userCount"></span>
+            </div>
+          </div>
+
+          <div class="messages-container" id="messagesContainer">
+            <div class="welcome-message">
+              <p>Welcome to <strong>WamsChat</strong>!</p>
+              <p>
+                This is a demonstration of a client-side chat application using AMQP streams over
+                WebSockets. No backend required!
+              </p>
+            </div>
+          </div>
+
+          <form class="message-input-form" id="messageForm">
+            <input type="text" id="messageInput" placeholder="Type a message..." maxlength="1000" autocomplete="off" />
+            <button type="submit" id="sendButton" disabled>Send</button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal" id="usernameModal">
+      <div class="modal-content">
+        <h3>Welcome to WamsChat</h3>
+        <p>Please enter your username to start chatting:</p>
+        <form id="usernameForm">
+          <input type="text" id="usernameInput" placeholder="Your username..." maxlength="20" required />
+          <div class="modal-actions">
+            <button type="submit">Join Chat</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </body>
+
+</html>
