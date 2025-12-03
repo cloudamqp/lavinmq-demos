@@ -28,6 +28,7 @@ class WamsChatApp {
     this.amqpConnection.addEventListener('connected', () => {
       console.log('Connected to AMQP broker');
       this.uiManager.updateConnectionStatus('connected');
+      this.uiManager.enableChatInterface();
     });
 
     this.amqpConnection.addEventListener('disconnected', () => {
