@@ -416,6 +416,16 @@ body {
   padding: 0.5rem 0;
 }
 
+.message-link {
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--text-primary);
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+
 .message-header {
   display: flex;
   align-items: baseline;
