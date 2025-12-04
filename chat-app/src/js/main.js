@@ -93,7 +93,7 @@ class WamsChatApp {
       }
 
       // Show username modal for basic auth or OAuth login
-      // this.uiManager.showUsernameModal(isOAuthConfigured, () => this.oauthClient.startOAuthFlow());
+      this.uiManager.showUsernameModal(isOAuthConfigured, () => this.oauthClient.startOAuthFlow());
 
       // Connect to AMQP broker (for basic auth)
       if (!isOAuthConfigured) {

@@ -472,6 +472,26 @@ body {
   font-weight: 700;
 }
 
+.system-message.command-output {
+  text-align: left;
+  font-style: normal;
+  background-color: var(--background-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin: 0.75rem 0;
+}
+
+.system-message.command-output pre {
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--text-primary);
+}
+
 /* Message input */
 .message-input-form {
   padding: 1rem 1.5rem;

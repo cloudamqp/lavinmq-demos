@@ -282,7 +282,7 @@ class ChatUIManager {
     } else if (command === 'help') {
       this.showCommandHelp();
     } else {
-      this.displayCommandOutput(`Unknown command: /${command}\nType /help for available commands.`);
+      this.displaySystemMessage(`Unknown command: /${command}. Type /help for available commands.`);
     }
   }
 
@@ -329,17 +329,36 @@ class ChatUIManager {
   }
 
   /**
-   * Show help for available commands
+   * Show help for available commands (displayed inline, not as DM)
    */
   showCommandHelp() {
-    this.displayCommandOutput(
+    const helpText =
       'Available Commands:\n' +
       '─'.repeat(40) + '\n' +
       '/lavinmq overview     - Broker statistics\n' +
       '/lavinmq queue-info   - Queue information\n' +
       '/lavinmq connections  - Active connections\n' +
-      '/help                 - Show this help'
-    );
+      '/help                 - Show this help';
+
+    const messageElement = document.createElement('div');
+    messageElement.className = 'system-message command-output';
+    messageElement.innerHTML = `<pre>${this.escapeHtml(helpText)}</pre>`;
+
+    this.messagesContainer.appendChild(messageElement);
+    this.scrollToBottom();
+  }
+
+  /**
+   * Display a simple system message inline
+   * @param {string} text - The message text
+   */
+  displaySystemMessage(text) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'system-message';
+    messageElement.textContent = text;
+
+    this.messagesContainer.appendChild(messageElement);
+    this.scrollToBottom();
   }
 
   /**
