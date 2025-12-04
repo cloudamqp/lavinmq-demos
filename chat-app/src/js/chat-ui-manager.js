@@ -4,8 +4,9 @@
  */
 
 class ChatUIManager {
-  constructor(channelManager) {
+  constructor(channelManager, lavinmqApi = null) {
     this.channelManager = channelManager;
+    this.lavinmqApi = lavinmqApi;
     this.username = null;
     this.defaultChannel = 'general';
     this.currentChannel = this.defaultChannel;
@@ -249,6 +250,14 @@ class ChatUIManager {
       return;
     }
 
+    // Check for slash commands
+    if (content.startsWith('/')) {
+      this.messageInput.value = '';
+      this.updateSendButtonState();
+      await this.handleSlashCommand(content);
+      return;
+    }
+
     try {
       await this.channelManager.sendMessage(this.currentChannel, this.username, content);
       this.messageInput.value = '';
@@ -257,6 +266,93 @@ class ChatUIManager {
       console.error('Failed to send message:', error);
       this.showError('Failed to send message');
     }
+  }
+
+  /**
+   * Handle slash commands
+   * @param {string} input - Full command input starting with /
+   */
+  async handleSlashCommand(input) {
+    const parts = input.slice(1).split(/\s+/);
+    const command = parts[0]?.toLowerCase();
+    const subcommand = parts[1]?.toLowerCase();
+
+    if (command === 'lavinmq') {
+      await this.handleLavinMQCommand(subcommand);
+    } else if (command === 'help') {
+      this.showCommandHelp();
+    } else {
+      this.displayCommandOutput(`Unknown command: /${command}\nType /help for available commands.`);
+    }
+  }
+
+  /**
+   * Handle LavinMQ-specific commands
+   * @param {string} subcommand - The subcommand (overview, queue-info, connections)
+   */
+  async handleLavinMQCommand(subcommand) {
+    if (!this.lavinmqApi) {
+      this.displayCommandOutput('LavinMQ API is not configured.');
+      return;
+    }
+
+    try {
+      switch (subcommand) {
+        case 'overview':
+          const overview = await this.lavinmqApi.getOverview();
+          this.displayCommandOutput(this.lavinmqApi.formatOverview(overview));
+          break;
+
+        case 'queue-info':
+        case 'queues':
+          const queues = await this.lavinmqApi.getQueues();
+          this.displayCommandOutput(this.lavinmqApi.formatQueues(queues));
+          break;
+
+        case 'connections':
+          const connections = await this.lavinmqApi.getConnections();
+          this.displayCommandOutput(this.lavinmqApi.formatConnections(connections));
+          break;
+
+        default:
+          this.displayCommandOutput(
+            'LavinMQ Commands:\n' +
+            '  /lavinmq overview     - Show broker overview statistics\n' +
+            '  /lavinmq queue-info   - Show queue information\n' +
+            '  /lavinmq connections  - Show active connections'
+          );
+      }
+    } catch (error) {
+      console.error('LavinMQ API error:', error);
+      this.displayCommandOutput(`Error fetching LavinMQ data: ${error.message}`);
+    }
+  }
+
+  /**
+   * Show help for available commands
+   */
+  showCommandHelp() {
+    this.displayCommandOutput(
+      'Available Commands:\n' +
+      '─'.repeat(40) + '\n' +
+      '/lavinmq overview     - Broker statistics\n' +
+      '/lavinmq queue-info   - Queue information\n' +
+      '/lavinmq connections  - Active connections\n' +
+      '/help                 - Show this help'
+    );
+  }
+
+  /**
+   * Display command output as a system message (local only, not sent to channel)
+   * @param {string} output - The output text to display
+   */
+  displayCommandOutput(output) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'system-message command-output';
+    messageElement.innerHTML = `<pre>${this.escapeHtml(output)}</pre>`;
+
+    this.messagesContainer.appendChild(messageElement);
+    this.scrollToBottom();
   }
 
   async switchChannel(channelName) {

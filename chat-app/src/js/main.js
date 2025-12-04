@@ -7,12 +7,14 @@ import { AmqpConnectionManager } from './amqp-connection.js';
 import { ChatChannelManager } from './chat-channel-manager.js';
 import { ChatUIManager } from './chat-ui-manager.js';
 import { OAuth2Client } from './oauth-client.js';
+import { LavinMQApiClient } from './lavinmq-api.js';
 
 class WamsChatApp {
   constructor() {
     this.amqpConnection = new AmqpConnectionManager();
     this.channelManager = new ChatChannelManager(this.amqpConnection);
-    this.uiManager = new ChatUIManager(this.channelManager);
+    this.lavinmqApi = new LavinMQApiClient();
+    this.uiManager = new ChatUIManager(this.channelManager, this.lavinmqApi);
     this.oauthClient = new OAuth2Client();
 
     this.bindConnectionEvents();
@@ -55,6 +57,7 @@ class WamsChatApp {
           const token = await this.oauthClient.handleCallback();
           const username = this.oauthClient.getUsername();
           this.amqpConnection.setOAuthToken(token);
+          this.lavinmqApi.setCredentials('oauth', token);
           console.log('OAuth authentication successful for user:', username);
 
           // Connect to AMQP after getting token
@@ -77,6 +80,7 @@ class WamsChatApp {
         const token = this.oauthClient.getAccessToken();
         const username = this.oauthClient.getUsername();
         this.amqpConnection.setOAuthToken(token);
+        this.lavinmqApi.setCredentials('oauth', token);
 
         // Connect to AMQP
         await this.amqpConnection.connect();
@@ -89,10 +93,15 @@ class WamsChatApp {
       }
 
       // Show username modal for basic auth or OAuth login
-      this.uiManager.showUsernameModal(isOAuthConfigured, () => this.oauthClient.startOAuthFlow());
+      // this.uiManager.showUsernameModal(isOAuthConfigured, () => this.oauthClient.startOAuthFlow());
 
       // Connect to AMQP broker (for basic auth)
       if (!isOAuthConfigured) {
+        // Set basic auth credentials for LavinMQ API
+        const username = import.meta.env.VITE_AMQP_USERNAME || 'guest';
+        const password = import.meta.env.VITE_AMQP_PASSWORD || 'guest';
+        this.lavinmqApi.setCredentials(username, password);
+
         await this.amqpConnection.connect();
       }
     } catch (error) {
