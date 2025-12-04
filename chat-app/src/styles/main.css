@@ -449,17 +449,15 @@ body {
 }
 
 /* Command output styling */
-.system-message.command-output {
-  text-align: left;
-  font-style: normal;
+.message.command-output {
   background-color: var(--background-tertiary);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   margin: 0.75rem 0;
 }
 
-.system-message.command-output pre {
+.message.command-output pre {
   margin: 0;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 0.85rem;
@@ -467,6 +465,11 @@ body {
   white-space: pre-wrap;
   word-wrap: break-word;
   color: var(--text-primary);
+}
+
+.message-author.lavinmq-bot {
+  color: var(--secondary-color);
+  font-weight: 700;
 }
 
 /* Message input */
