@@ -15,7 +15,8 @@ const gameState = {
   queues: new Map(), // queueName -> { messages: [], channel, consumer }
   totalMessages: 0,
   gameStartTime: null,
-  lastSpawnRateDecrease: null
+  lastSpawnRateDecrease: null,
+  fanoutMode: false
 };
 
 // Queue name pool (CloudAMQP animal theme)
@@ -107,15 +108,9 @@ async function handleOverflow(name) {
   broadcast(getStateForClient());
 }
 
-// Spawn a message to a random queue
+// Spawn a message to a random queue (or all queues in fanout mode)
 async function spawnMessage() {
   if (gameState.queues.size === 0) return;
-
-  const queueNames = Array.from(gameState.queues.keys());
-  const targetQueue = queueNames[Math.floor(Math.random() * queueNames.length)];
-  const queueData = gameState.queues.get(targetQueue);
-
-  if (!queueData) return;
 
   const messageType = Math.random() > 0.5 ? 'good' : 'bad';
   const message = {
@@ -123,20 +118,44 @@ async function spawnMessage() {
     type: messageType
   };
 
-  // Publish to AMQP
-  await amqpChannel.basicPublish('', targetQueue, JSON.stringify(message));
+  if (gameState.fanoutMode) {
+    // Fanout mode: send to all queues
+    const queueNames = Array.from(gameState.queues.keys());
+    for (const queueName of queueNames) {
+      const queueData = gameState.queues.get(queueName);
+      if (!queueData) continue;
 
-  // Add to local state
-  queueData.messages.push(message);
-  gameState.totalMessages++;
+      const msgCopy = { ...message, id: Date.now() + Math.random() };
 
-  broadcast({ type: 'message_spawned', queue: targetQueue, message });
+      await amqpChannel.basicPublish('', queueName, JSON.stringify(msgCopy));
+      queueData.messages.push(msgCopy);
+      gameState.totalMessages++;
 
-  // Check for overflow
-  if (queueData.messages.length >= 10) {
-    await handleOverflow(targetQueue);
-  } else {
+      if (queueData.messages.length >= 10) {
+        await handleOverflow(queueName);
+      }
+    }
+    broadcast({ type: 'message_spawned_fanout', message });
     broadcast(getStateForClient());
+  } else {
+    // Normal mode: send to random queue
+    const queueNames = Array.from(gameState.queues.keys());
+    const targetQueue = queueNames[Math.floor(Math.random() * queueNames.length)];
+    const queueData = gameState.queues.get(targetQueue);
+
+    if (!queueData) return;
+
+    await amqpChannel.basicPublish('', targetQueue, JSON.stringify(message));
+    queueData.messages.push(message);
+    gameState.totalMessages++;
+
+    broadcast({ type: 'message_spawned', queue: targetQueue, message });
+
+    if (queueData.messages.length >= 10) {
+      await handleOverflow(targetQueue);
+    } else {
+      broadcast(getStateForClient());
+    }
   }
 }
 
@@ -257,6 +276,22 @@ function startNewQueueLoop() {
   scheduleNextQueue();
 }
 
+// Fanout mode loop - activate every 30s for 5s duration
+let fanoutInterval = null;
+function startFanoutLoop() {
+  fanoutInterval = setInterval(() => {
+    // Start fanout mode
+    gameState.fanoutMode = true;
+    broadcast({ type: 'fanout_start' });
+
+    // End fanout mode after 5 seconds
+    setTimeout(() => {
+      gameState.fanoutMode = false;
+      broadcast({ type: 'fanout_end' });
+    }, 5000);
+  }, 30000);
+}
+
 // Clean up all game queues from AMQP
 async function cleanupQueues() {
   const queueNames = Array.from(gameState.queues.keys());
@@ -276,6 +311,7 @@ async function initGame() {
   if (spawnInterval) clearInterval(spawnInterval);
   if (difficultyInterval) clearInterval(difficultyInterval);
   if (newQueueInterval) clearTimeout(newQueueInterval);
+  if (fanoutInterval) clearInterval(fanoutInterval);
 
   // Clean up existing queues
   await cleanupQueues();
@@ -285,6 +321,7 @@ async function initGame() {
   gameState.spawnRate = 3000;
   gameState.totalMessages = 0;
   gameState.gameStartTime = Date.now();
+  gameState.fanoutMode = false;
   queueCounter = 0;
 
   // Create initial 2 queues
@@ -295,6 +332,7 @@ async function initGame() {
   startSpawnLoop();
   startDifficultyLoop();
   startNewQueueLoop();
+  startFanoutLoop();
 
   broadcast(getStateForClient());
 }
