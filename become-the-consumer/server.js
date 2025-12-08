@@ -12,11 +12,12 @@ const PORT = process.env.PORT || 3001;
 const gameState = {
   score: 0,
   spawnRate: 3000, // ms
-  queues: new Map(), // queueName -> { messages: [], channel, consumer }
+  queues: new Map(), // queueName -> { messages: [], locked, lockTimeout }
   totalMessages: 0,
   gameStartTime: null,
   lastSpawnRateDecrease: null,
-  fanoutMode: false
+  fanoutMode: false,
+  gameOver: false
 };
 
 // Queue name pool (CloudAMQP animal theme)
@@ -55,13 +56,18 @@ function broadcast(message) {
 function getStateForClient() {
   const queuesData = {};
   gameState.queues.forEach((data, name) => {
-    queuesData[name] = data.messages;
+    queuesData[name] = {
+      messages: data.messages,
+      locked: data.locked || false,
+      lockedAt: data.lockedAt || null
+    };
   });
   return {
     type: 'state',
     score: gameState.score,
     spawnRate: gameState.spawnRate,
-    queues: queuesData
+    queues: queuesData,
+    gameOver: gameState.gameOver
   };
 }
 
@@ -73,44 +79,91 @@ async function createQueue(name) {
 
   gameState.queues.set(name, {
     messages: [],
-    consumer: null
+    locked: false,
+    lockedAt: null,
+    lockTimeout: null
   });
 
   broadcast({ type: 'queue_added', name });
   broadcast(getStateForClient());
 }
 
-// Handle queue overflow
-async function handleOverflow(name) {
+// Handle queue lock (when queue reaches 10 messages)
+async function handleQueueLock(name) {
   const queueData = gameState.queues.get(name);
-  if (!queueData) return;
+  if (!queueData || queueData.locked) return;
 
-  // Overflow penalty
-  const scoreChange = -100;
+  // Lock the queue
+  queueData.locked = true;
+  queueData.lockedAt = Date.now();
+
+  broadcast({
+    type: 'queue_locked',
+    name,
+    lockedAt: queueData.lockedAt
+  });
+  broadcast(getStateForClient());
+
+  // Set timeout for game over after 10 seconds
+  queueData.lockTimeout = setTimeout(() => {
+    if (queueData.locked && !gameState.gameOver) {
+      gameState.gameOver = true;
+      broadcast({ type: 'game_over', reason: `Queue "${name}" was locked for too long!` });
+      broadcast(getStateForClient());
+    }
+  }, 10000);
+}
+
+// Handle purge command
+async function handlePurge(queueName) {
+  if (gameState.gameOver) {
+    return { success: false, error: 'Game over! Use /reset to play again.' };
+  }
+
+  const queueData = gameState.queues.get(queueName);
+
+  if (!queueData) {
+    return { success: false, error: `Queue "${queueName}" not found` };
+  }
+
+  if (!queueData.locked) {
+    return { success: false, error: `Queue "${queueName}" is not locked` };
+  }
+
+  // Clear the lock timeout
+  if (queueData.lockTimeout) {
+    clearTimeout(queueData.lockTimeout);
+    queueData.lockTimeout = null;
+  }
+
+  // Purge penalty
+  const scoreChange = -50;
   gameState.score += scoreChange;
 
   // Purge AMQP queue
   try {
-    const q = await amqpChannel.queue(name, { passive: true });
+    const q = await amqpChannel.queue(queueName, { passive: true });
     await q.purge();
   } catch (e) {
     // Queue might not exist
   }
 
-  // Clear local messages
+  // Clear local messages and unlock
   queueData.messages = [];
+  queueData.locked = false;
+  queueData.lockedAt = null;
 
-  broadcast({
-    type: 'queue_overflow',
-    name,
-    scoreChange
-  });
   broadcast(getStateForClient());
+
+  return {
+    success: true,
+    scoreChange
+  };
 }
 
 // Spawn a message to a random queue (or all queues in fanout mode)
 async function spawnMessage() {
-  if (gameState.queues.size === 0) return;
+  if (gameState.queues.size === 0 || gameState.gameOver) return;
 
   const messageType = Math.random() > 0.5 ? 'good' : 'bad';
   const message = {
@@ -119,11 +172,11 @@ async function spawnMessage() {
   };
 
   if (gameState.fanoutMode) {
-    // Fanout mode: send to all queues
+    // Fanout mode: send to all unlocked queues
     const queueNames = Array.from(gameState.queues.keys());
     for (const queueName of queueNames) {
       const queueData = gameState.queues.get(queueName);
-      if (!queueData) continue;
+      if (!queueData || queueData.locked) continue;
 
       const msgCopy = { ...message, id: Date.now() + Math.random() };
 
@@ -132,14 +185,20 @@ async function spawnMessage() {
       gameState.totalMessages++;
 
       if (queueData.messages.length >= 10) {
-        await handleOverflow(queueName);
+        await handleQueueLock(queueName);
       }
     }
     broadcast({ type: 'message_spawned_fanout', message });
     broadcast(getStateForClient());
   } else {
-    // Normal mode: send to random queue
-    const queueNames = Array.from(gameState.queues.keys());
+    // Normal mode: send to random unlocked queue
+    const queueNames = Array.from(gameState.queues.keys()).filter(name => {
+      const q = gameState.queues.get(name);
+      return q && !q.locked;
+    });
+
+    if (queueNames.length === 0) return;
+
     const targetQueue = queueNames[Math.floor(Math.random() * queueNames.length)];
     const queueData = gameState.queues.get(targetQueue);
 
@@ -152,7 +211,7 @@ async function spawnMessage() {
     broadcast({ type: 'message_spawned', queue: targetQueue, message });
 
     if (queueData.messages.length >= 10) {
-      await handleOverflow(targetQueue);
+      await handleQueueLock(targetQueue);
     } else {
       broadcast(getStateForClient());
     }
@@ -161,10 +220,18 @@ async function spawnMessage() {
 
 // Handle player ack command
 async function handleAck(queueName) {
+  if (gameState.gameOver) {
+    return { success: false, error: 'Game over! Use /reset to play again.' };
+  }
+
   const queueData = gameState.queues.get(queueName);
 
   if (!queueData) {
     return { success: false, error: `Queue "${queueName}" not found` };
+  }
+
+  if (queueData.locked) {
+    return { success: false, error: `Queue "${queueName}" is locked. Use /purge to unlock.` };
   }
 
   if (queueData.messages.length === 0) {
@@ -200,10 +267,18 @@ async function handleAck(queueName) {
 
 // Handle player reject command
 async function handleReject(queueName) {
+  if (gameState.gameOver) {
+    return { success: false, error: 'Game over! Use /reset to play again.' };
+  }
+
   const queueData = gameState.queues.get(queueName);
 
   if (!queueData) {
     return { success: false, error: `Queue "${queueName}" not found` };
+  }
+
+  if (queueData.locked) {
+    return { success: false, error: `Queue "${queueName}" is locked. Use /purge to unlock.` };
   }
 
   if (queueData.messages.length === 0) {
@@ -322,6 +397,7 @@ async function initGame() {
   gameState.totalMessages = 0;
   gameState.gameStartTime = Date.now();
   gameState.fanoutMode = false;
+  gameState.gameOver = false;
   queueCounter = 0;
 
   // Create initial 2 queues
@@ -406,6 +482,11 @@ wss.on('connection', (ws) => {
         case 'reset':
           await initGame();
           ws.send(JSON.stringify({ type: 'command_result', command: 'reset', success: true }));
+          break;
+
+        case 'purge':
+          const purgeResult = await handlePurge(msg.queue);
+          ws.send(JSON.stringify({ type: 'command_result', command: 'purge', ...purgeResult }));
           break;
       }
     } catch (e) {
