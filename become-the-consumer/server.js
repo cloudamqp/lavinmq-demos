@@ -17,7 +17,8 @@ const gameState = {
   gameStartTime: null,
   lastSpawnRateDecrease: null,
   fanoutMode: false,
-  gameOver: false
+  gameOver: false,
+  streak: 0
 };
 
 // Queue name pool (CloudAMQP animal theme)
@@ -52,6 +53,11 @@ function broadcast(message) {
   });
 }
 
+// Calculate score multiplier from streak
+function getMultiplier() {
+  return Math.floor(gameState.streak / 10) + 1;
+}
+
 // Get current game state for clients
 function getStateForClient() {
   const queuesData = {};
@@ -67,7 +73,9 @@ function getStateForClient() {
     score: gameState.score,
     spawnRate: gameState.spawnRate,
     queues: queuesData,
-    gameOver: gameState.gameOver
+    gameOver: gameState.gameOver,
+    streak: gameState.streak,
+    multiplier: getMultiplier()
   };
 }
 
@@ -241,10 +249,16 @@ async function handleAck(queueName) {
   const message = queueData.messages.shift();
   const correct = message.type === 'good';
 
+  let scoreChange;
   if (correct) {
-    gameState.score += 10;
+    const multiplier = getMultiplier();
+    scoreChange = 10 * multiplier;
+    gameState.score += scoreChange;
+    gameState.streak++;
   } else {
-    gameState.score -= 5; // Penalty for wrong action
+    scoreChange = -5;
+    gameState.score += scoreChange;
+    gameState.streak = 0; // Reset streak on fail
   }
 
   // Consume from AMQP queue
@@ -261,7 +275,9 @@ async function handleAck(queueName) {
     success: true,
     correct,
     messageType: message.type,
-    scoreChange: correct ? 10 : -5
+    scoreChange,
+    streak: gameState.streak,
+    multiplier: getMultiplier()
   };
 }
 
@@ -288,10 +304,16 @@ async function handleReject(queueName) {
   const message = queueData.messages.shift();
   const correct = message.type === 'bad';
 
+  let scoreChange;
   if (correct) {
-    gameState.score += 10;
+    const multiplier = getMultiplier();
+    scoreChange = 10 * multiplier;
+    gameState.score += scoreChange;
+    gameState.streak++;
   } else {
-    gameState.score -= 5; // Penalty for wrong action
+    scoreChange = -5;
+    gameState.score += scoreChange;
+    gameState.streak = 0; // Reset streak on fail
   }
 
   // Consume from AMQP queue
@@ -308,7 +330,9 @@ async function handleReject(queueName) {
     success: true,
     correct,
     messageType: message.type,
-    scoreChange: correct ? 10 : -5
+    scoreChange,
+    streak: gameState.streak,
+    multiplier: getMultiplier()
   };
 }
 
@@ -398,6 +422,7 @@ async function initGame() {
   gameState.gameStartTime = Date.now();
   gameState.fanoutMode = false;
   gameState.gameOver = false;
+  gameState.streak = 0;
   queueCounter = 0;
 
   // Create initial 2 queues
