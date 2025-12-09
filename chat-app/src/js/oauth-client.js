@@ -196,6 +196,39 @@ export class OAuth2Client {
   }
 
   /**
+   * Check if stored token is expired
+   */
+  isTokenExpired() {
+    const token = this.getAccessToken();
+    if (!token) {
+      return true;
+    }
+
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return true; // Invalid JWT format
+      }
+
+      const payload = JSON.parse(atob(parts[1]));
+      if (!payload.exp) {
+        return false; // No expiration claim, assume valid
+      }
+
+      // exp is in seconds, Date.now() is in milliseconds
+      // Add 30 second buffer to avoid edge cases
+      const expirationTime = payload.exp * 1000;
+      const now = Date.now();
+      const bufferMs = 30 * 1000;
+
+      return now >= (expirationTime - bufferMs);
+    } catch {
+      // If we can't decode, treat as expired to be safe
+      return true;
+    }
+  }
+
+  /**
    * Logout - clear stored tokens
    */
   logout() {

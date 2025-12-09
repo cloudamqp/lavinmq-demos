@@ -14,9 +14,29 @@ class WamsChatApp {
     this.channelManager = new ChatChannelManager(this.amqpConnection);
     this.uiManager = new ChatUIManager(this.channelManager);
     this.oauthClient = new OAuth2Client();
+    this.logoutBtn = document.getElementById('logoutBtn');
 
     this.bindConnectionEvents();
+    this.bindLogoutButton();
     this.initialize();
+  }
+
+  bindLogoutButton() {
+    if (this.logoutBtn) {
+      this.logoutBtn.addEventListener('click', () => this.handleLogout());
+    }
+  }
+
+  async handleLogout() {
+    await this.shutdown();
+    this.oauthClient.logout();
+    window.location.reload();
+  }
+
+  showLogoutButton() {
+    if (this.logoutBtn) {
+      this.logoutBtn.style.display = 'block';
+    }
   }
 
   bindConnectionEvents() {
@@ -64,6 +84,7 @@ class WamsChatApp {
           this.uiManager.setUsername(username);
           this.uiManager.hideUsernameModal();
           await this.uiManager.handleUsernameSubmit();
+          this.showLogoutButton();
           return;
         } catch (error) {
           console.error('OAuth callback failed:', error);
@@ -74,17 +95,37 @@ class WamsChatApp {
 
       // Check if already authenticated with OAuth
       if (isOAuthConfigured && this.oauthClient.isAuthenticated()) {
+        // Check if token is expired before trying to connect
+        if (this.oauthClient.isTokenExpired()) {
+          console.log('OAuth token expired, clearing and showing login');
+          this.oauthClient.logout();
+          this.uiManager.showUsernameModal(isOAuthConfigured, () => this.oauthClient.startOAuthFlow());
+          return;
+        }
+
         const token = this.oauthClient.getAccessToken();
         const username = this.oauthClient.getUsername();
         this.amqpConnection.setOAuthToken(token);
 
         // Connect to AMQP
-        await this.amqpConnection.connect();
+        try {
+          await this.amqpConnection.connect();
+        } catch (error) {
+          // If connection fails due to expired token, clear and show login
+          if (error.message?.includes('ACCESS_REFUSED') || error.message?.includes('expired')) {
+            console.log('OAuth token rejected, clearing and showing login');
+            this.oauthClient.logout();
+            this.uiManager.showUsernameModal(isOAuthConfigured, () => this.oauthClient.startOAuthFlow());
+            return;
+          }
+          throw error;
+        }
 
         // Set username from stored JWT info
         this.uiManager.setUsername(username);
         this.uiManager.hideUsernameModal();
         await this.uiManager.handleUsernameSubmit();
+        this.showLogoutButton();
         return;
       }
 
