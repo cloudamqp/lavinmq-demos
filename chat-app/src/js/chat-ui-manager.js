@@ -4,8 +4,9 @@
  */
 
 class ChatUIManager {
-  constructor(channelManager) {
+  constructor(channelManager, lavinmqApi = null) {
     this.channelManager = channelManager;
+    this.lavinmqApi = lavinmqApi;
     this.username = null;
     this.defaultChannel = 'general';
     this.currentChannel = this.defaultChannel;
@@ -249,6 +250,14 @@ class ChatUIManager {
       return;
     }
 
+    // Check for slash commands
+    if (content.startsWith('/')) {
+      this.messageInput.value = '';
+      this.updateSendButtonState();
+      await this.handleSlashCommand(content);
+      return;
+    }
+
     try {
       await this.channelManager.sendMessage(this.currentChannel, this.username, content);
       this.messageInput.value = '';
@@ -257,6 +266,217 @@ class ChatUIManager {
       console.error('Failed to send message:', error);
       this.showError('Failed to send message');
     }
+  }
+
+  /**
+   * Handle slash commands
+   * @param {string} input - Full command input starting with /
+   */
+  async handleSlashCommand(input) {
+    const parts = input.slice(1).split(/\s+/);
+    const command = parts[0]?.toLowerCase();
+    const subcommand = parts[1]?.toLowerCase();
+
+    if (command === 'lavinmq') {
+      await this.handleLavinMQCommand(subcommand);
+    } else if (command === 'help') {
+      this.showCommandHelp();
+    } else {
+      this.displaySystemMessage(`Unknown command: /${command}. Type /help for available commands.`);
+    }
+  }
+
+  /**
+   * Handle LavinMQ-specific commands
+   * @param {string} subcommand - The subcommand (overview, queue-info, connections)
+   */
+  async handleLavinMQCommand(subcommand) {
+    if (!this.lavinmqApi) {
+      this.displayCommandOutput('LavinMQ API is not configured.');
+      return;
+    }
+
+    try {
+      switch (subcommand) {
+        case 'overview':
+          const overview = await this.lavinmqApi.getOverview();
+          this.displayCommandOutput(this.lavinmqApi.formatOverview(overview));
+          break;
+
+        case 'queue-info':
+        case 'queues':
+          const queues = await this.lavinmqApi.getQueues();
+          this.displayCommandOutput(this.lavinmqApi.formatQueues(queues));
+          break;
+
+        case 'connections':
+          const connections = await this.lavinmqApi.getConnections();
+          this.displayCommandOutput(this.lavinmqApi.formatConnections(connections));
+          break;
+
+        default:
+          this.displayCommandOutput(
+            'LavinMQ Commands:\n' +
+            '  /lavinmq overview     - Show broker overview statistics\n' +
+            '  /lavinmq queue-info   - Show queue information\n' +
+            '  /lavinmq connections  - Show active connections'
+          );
+      }
+    } catch (error) {
+      console.error('LavinMQ API error:', error);
+      this.displayCommandOutput(`Error fetching LavinMQ data: ${error.message}`);
+    }
+  }
+
+  /**
+   * Show help for available commands (displayed inline, not as DM)
+   */
+  showCommandHelp() {
+    const helpText =
+      'Available Commands:\n' +
+      '─'.repeat(40) + '\n' +
+      '/lavinmq overview     - Broker statistics\n' +
+      '/lavinmq queue-info   - Queue information\n' +
+      '/lavinmq connections  - Active connections\n' +
+      '/help                 - Show this help';
+
+    const messageElement = document.createElement('div');
+    messageElement.className = 'system-message command-output';
+    messageElement.innerHTML = `<pre>${this.escapeHtml(helpText)}</pre>`;
+
+    this.messagesContainer.appendChild(messageElement);
+    this.scrollToBottom();
+  }
+
+  /**
+   * Display a simple system message inline
+   * @param {string} text - The message text
+   */
+  displaySystemMessage(text) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'system-message';
+    messageElement.textContent = text;
+
+    this.messagesContainer.appendChild(messageElement);
+    this.scrollToBottom();
+  }
+
+  /**
+   * Display command output as a DM from LavinMQ (local only, not sent over AMQP)
+   * @param {string} output - The output text to display
+   */
+  displayCommandOutput(output) {
+    const botUsername = 'LavinMQ';
+    const dmChannelName = this.getBotDMChannelName(botUsername);
+
+    // Add LavinMQ to DM list if not already there
+    if (!this.directMessages.has(botUsername)) {
+      this.directMessages.add(botUsername);
+      this.addDMToUI(botUsername);
+    }
+
+    // Initialize message buffer for this DM channel if needed
+    if (!this.messageBuffers.has(dmChannelName)) {
+      this.messageBuffers.set(dmChannelName, []);
+    }
+
+    // Create the message object
+    const message = {
+      type: 'message',
+      username: botUsername,
+      content: output,
+      timestamp: new Date().toISOString(),
+      isCommandOutput: true,
+    };
+
+    // Add to message buffer
+    this.messageBuffers.get(dmChannelName).push(message);
+
+    // If we're currently viewing this DM, display it immediately
+    if (this.currentChannel === dmChannelName) {
+      this.displayBotMessage(message);
+    } else {
+      // Increment unread count and update indicator
+      if (!this.unreadCounts.has(dmChannelName)) {
+        this.unreadCounts.set(dmChannelName, 0);
+      }
+      this.unreadCounts.set(dmChannelName, this.unreadCounts.get(dmChannelName) + 1);
+      this.updateUnreadIndicator(dmChannelName);
+    }
+
+    // Switch to the LavinMQ DM channel
+    this.switchToBotDM(botUsername);
+  }
+
+  /**
+   * Get DM channel name for bot (doesn't use sorting since bot is special)
+   * @param {string} botUsername - The bot username
+   * @returns {string} - DM channel name
+   */
+  getBotDMChannelName(botUsername) {
+    // Use consistent naming with bot always second
+    const users = [this.username, botUsername].sort();
+    return `dm-${users[0]}-${users[1]}`;
+  }
+
+  /**
+   * Switch to bot DM channel without sending notifications
+   * @param {string} botUsername - The bot username
+   */
+  async switchToBotDM(botUsername) {
+    const dmChannelName = this.getBotDMChannelName(botUsername);
+
+    if (this.currentChannel === dmChannelName) {
+      return;
+    }
+
+    // Update current channel and UI
+    this.currentChannel = dmChannelName;
+    this.updateChannelUI(dmChannelName);
+
+    // Clear current messages and load buffered messages for this channel
+    this.clearMessages();
+    this.loadBotDMMessages(dmChannelName);
+
+    // Reset unread count
+    this.unreadCounts.set(dmChannelName, 0);
+    this.updateUnreadIndicator(dmChannelName);
+  }
+
+  /**
+   * Load buffered messages for bot DM channel
+   * @param {string} channelName - The DM channel name
+   */
+  loadBotDMMessages(channelName) {
+    const bufferedMessages = this.messageBuffers.get(channelName);
+    if (bufferedMessages && bufferedMessages.length > 0) {
+      bufferedMessages.forEach(message => {
+        if (message.isCommandOutput) {
+          this.displayBotMessage(message);
+        } else {
+          this.displayMessage(message);
+        }
+      });
+    }
+  }
+
+  /**
+   * Display a bot message with special formatting
+   * @param {Object} message - The message object
+   */
+  displayBotMessage(message) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message command-output';
+    messageElement.innerHTML = `
+      <div class="message-header">
+        <span class="message-author lavinmq-bot">${this.escapeHtml(message.username)}</span>
+        <span class="message-timestamp">${this.formatTimestamp(message.timestamp)}</span>
+      </div>
+      <div class="message-content"><pre>${this.escapeHtml(message.content)}</pre></div>
+    `;
+
+    this.messagesContainer.appendChild(messageElement);
+    this.scrollToBottom();
   }
 
   async switchChannel(channelName) {
