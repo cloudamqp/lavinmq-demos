@@ -12,6 +12,14 @@ export default defineConfig({
   server: {
     port: 3001,
     open: true,
+    proxy: {
+      // Proxy LavinMQ HTTP API requests to avoid CORS
+      '/api': {
+        target: `http://${process.env.VITE_AMQP_HOST || 'localhost'}:${process.env.VITE_AMQP_PORT || '15672'}`,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   resolve: {
     alias: {
