@@ -26,9 +26,22 @@ Perfect for learning how to build modern real-time applications with LavinMQ.
 
 [View Chat App Demo →](./chat-app)
 
+### 📹 [Video Streamer](./video-streamer) _(Backend)_
+
+A video streaming application demonstrating:
+- **AMQP stream queues** - Frame persistence with replay/seek capability
+- **Back-pressure with prefetch** - Client-driven acks control flow rate
+- **FFmpeg frame extraction** - Video frames published as AMQP messages
+- **WebSocket proxy** - Server consumes from LavinMQ, forwards to browser
+- **Transport controls** - Play/pause, rewind, seek, speed and size presets
+
+Shows how to use LavinMQ stream queues for ordered, replayable message delivery.
+
+[View Video Streamer Demo →](./video-streamer)
+
 ---
 
-_More demos coming soon! Backend demos (Node.js workers, Ruby consumers, etc.) will be added with their own deployment instructions._
+_More demos coming soon!_
 
 ## Getting Started
 
