@@ -98,7 +98,7 @@ PORT=3000
 
 ## Sample Video
 
-Set `SAMPLE_VIDEO_URL` in `.env` to auto-download a sample video on server start. Or place a `sample-video.mp4` in the project root manually.
+If `sample-video.mp4` doesn't exist in the project root, the server will automatically download one from `https://lavinmq-demos.s3.us-east-2.amazonaws.com/video-demo/sample_video.mp4` on startup. Override the URL by setting `SAMPLE_VIDEO_URL` in `.env`, or place your own `sample-video.mp4` in the project root to skip the download entirely.
 
 ## Troubleshooting
 
