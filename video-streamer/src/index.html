@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LavinMQ Video Streaming Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>LavinMQ Video Streaming Demo</h1>
+
+        <div id="status" class="status connecting">Connecting...</div>
+
+        <div class="video-container">
+            <div id="frameDisplay">
+                <div class="placeholder">Waiting for video frames...</div>
+            </div>
+        </div>
+
+        <div class="transport-bar">
+            <div class="transport-controls">
+                <button id="rewindAllBtn" class="transport-btn" title="Rewind to start">&#9198;</button>
+                <button id="rewind5Btn" class="transport-btn" title="Rewind 5s">&#9194;</button>
+                <button id="playPauseBtn" class="transport-btn play-pause" title="Play">&#9654;</button>
+                <button id="forward5Btn" class="transport-btn" title="Forward 5s">&#9193;</button>
+                <button id="forwardEndBtn" class="transport-btn" title="Forward to end">&#9197;</button>
+            </div>
+            <div class="video-time" id="videoTime">0.0s / -</div>
+        </div>
+
+        <div class="options-bar">
+            <div class="option-group">
+                <span class="option-label">Speed</span>
+                <button id="presetSlow50" class="option-btn">0.5x</button>
+                <button id="presetSlow75" class="option-btn">0.75x</button>
+                <button id="presetNormal" class="option-btn active">1x</button>
+                <button id="presetFast150" class="option-btn">1.5x</button>
+                <button id="presetFast200" class="option-btn">2x</button>
+                <button id="unlimitedBtn" class="option-btn">Max</button>
+            </div>
+            <span class="option-separator"></span>
+            <div class="option-group">
+                <span class="option-label">Size</span>
+                <button id="size360" class="option-btn">360p</button>
+                <button id="size480" class="option-btn active">480p</button>
+                <button id="size720" class="option-btn">720p</button>
+                <button id="size1080" class="option-btn">1080p</button>
+            </div>
+        </div>
+
+        <details class="panel">
+            <summary>How to Use</summary>
+            <div class="panel-content help-text">
+                <p>This demo streams video frames through <strong>LavinMQ</strong> using AMQP stream queues. Each frame is published as a message and consumed in real-time via WebSocket.</p>
+                <ol>
+                    <li>Open <strong>Video Source</strong> below and click <strong>Publish Video</strong> to extract and publish frames from a sample video to LavinMQ. This only needs to be done once &mdash; frames persist in the stream queue.</li>
+                    <li>Press <strong>play</strong> to start playback. Use the transport controls to rewind, fast-forward, or skip to the start/end.</li>
+                    <li>Adjust <strong>Speed</strong> to change playback rate relative to the original FPS. <strong>Max</strong> drains frames as fast as possible.</li>
+                    <li>Adjust <strong>Size</strong> to change the video display resolution.</li>
+                    <li>Open <strong>Statistics</strong> to see consumer, connection, and video details.</li>
+                </ol>
+            </div>
+        </details>
+
+        <details class="panel">
+            <summary>Video Source</summary>
+            <div class="panel-content">
+                <div class="controls">
+                    <button id="runProducerBtn" class="primary">Publish Video</button>
+                    <button id="stopProducerBtn" class="secondary" disabled>Stop</button>
+                    <button id="clearBtn" class="secondary">Clear Display</button>
+                </div>
+                <div class="stat-grid compact">
+                    <div class="stat-card">
+                        <div class="stat-value" id="producerStatus">Idle</div>
+                        <div class="stat-label">Status</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="producerFrames">0</div>
+                        <div class="stat-label">Frames Published</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="producerData">0MB</div>
+                        <div class="stat-label">Data Sent</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgProducerFps">-</div>
+                        <div class="stat-label">Avg Publish FPS</div>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <details class="panel">
+            <summary>Statistics</summary>
+            <div class="panel-content">
+                <h3>Consumer</h3>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="frameCount">0</div>
+                        <div class="stat-label">Frames Received</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="fps">0</div>
+                        <div class="stat-label">Receive FPS</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="currentFrame">-</div>
+                        <div class="stat-label">Current Frame</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="displayFpsActual">0</div>
+                        <div class="stat-label">Display FPS</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalDataReceived">0MB</div>
+                        <div class="stat-label">Data Received</div>
+                    </div>
+                </div>
+
+                <h3>Connection</h3>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="connectionStatus">-</div>
+                        <div class="stat-label">Status</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="uptime">0s</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="droppedFrames">0</div>
+                        <div class="stat-label">Dropped Frames</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="queueInfo">0</div>
+                        <div class="stat-label">Frame Queue</div>
+                    </div>
+                </div>
+
+                <h3>Video Info</h3>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="videoResolution">-</div>
+                        <div class="stat-label">Resolution</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="videoFps">-</div>
+                        <div class="stat-label">Original FPS</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="videoDuration">-</div>
+                        <div class="stat-label">Duration</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="videoCodec">-</div>
+                        <div class="stat-label">Codec</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="compressionRatio">-</div>
+                        <div class="stat-label">Compression Ratio</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgFrameSize">-</div>
+                        <div class="stat-label">Avg Frame Size</div>
+                    </div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <script type="module" src="index.js"></script>
+</body>
+</html>
