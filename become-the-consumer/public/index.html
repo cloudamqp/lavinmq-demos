@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Become the Consumer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-wrapper">
+  <div class="game-container">
+    <header class="game-header">
+      <h1>BECOME THE CONSUMER</h1>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Streak</span>
+          <span class="stat-value" id="streak">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Multiplier</span>
+          <span class="stat-value" id="multiplier">1x</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Spawn Rate</span>
+          <span class="stat-value" id="spawn-rate">3.0s</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Queues</span>
+          <span class="stat-value" id="queue-count">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="game-area">
+      <div class="queues-container" id="queues"></div>
+    </main>
+
+    <footer class="cli-container">
+      <div class="cli-output" id="cli-output">
+        <div class="cli-line system">Welcome to Become the Consumer!</div>
+        <div class="cli-line system">Type /help for available commands</div>
+      </div>
+      <div class="cli-input-container">
+        <span class="cli-prompt">&gt;</span>
+        <input type="text" id="cli-input" class="cli-input" placeholder="Enter command..." autofocus>
+      </div>
+      <div class="cli-hints">
+        <span class="hint">/help</span>
+        <span class="hint">/ack &lt;queue&gt;</span>
+        <span class="hint">/reject &lt;queue&gt;</span>
+        <span class="hint">/purge &lt;queue&gt;</span>
+        <span class="hint">/status</span>
+        <span class="hint">/reset</span>
+      </div>
+    </footer>
+  </div>
+
+  <aside class="rules-panel">
+    <h2>Rules</h2>
+
+    <div class="rule-section">
+      <strong>Messages</strong>
+      <ul>
+        <li><span class="good-dot"></span> Green = Good → <code>/ack</code></li>
+        <li><span class="bad-dot"></span> Red = Bad → <code>/reject</code></li>
+      </ul>
+    </div>
+
+    <div class="rule-section">
+      <strong>Scoring</strong>
+      <ul>
+        <li>+10 pts × multiplier for correct</li>
+        <li>-5 pts for wrong (resets streak)</li>
+      </ul>
+    </div>
+
+    <div class="rule-section">
+      <strong>Streak & Multiplier</strong>
+      <ul>
+        <li>+1 streak per correct action</li>
+        <li>Multiplier = floor(streak/10) + 1</li>
+      </ul>
+    </div>
+
+    <div class="rule-section">
+      <strong>Queue Overflow</strong>
+      <ul>
+        <li>10 messages = LOCKED</li>
+        <li><code>/purge</code> to unlock (-50 pts)</li>
+        <li>10s to purge or GAME OVER</li>
+      </ul>
+    </div>
+
+    <div class="rule-section">
+      <strong>Difficulty</strong>
+      <ul>
+        <li>Spawn: 3s → 0.5s (speeds up)</li>
+        <li>New queue every 20-30s (max 10)</li>
+      </ul>
+    </div>
+
+    <div class="rule-section">
+      <strong>Fanout Mode</strong>
+      <ul>
+        <li>Every 30s for 5s</li>
+        <li>Messages go to ALL queues!</li>
+      </ul>
+    </div>
+  </aside>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
