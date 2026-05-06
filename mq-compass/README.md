@@ -8,7 +8,7 @@ MQ Compass is a beginner-friendly RAG demo with four independent services:
 
 One-line mental model: **crawler discovers updates, ingestion indexes them, retrieval answers questions, widget calls retrieval**.
 
-![Image of the demo](/demo-thumbnail.png)
+![Image of the demo](demo-thumbnail.png)
 
 ## Setting up the cloud resources (required first)
 
