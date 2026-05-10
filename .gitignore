@@ -8,3 +8,6 @@ node_modules
 public/
 dist/
 */dist/
+
+# Ignore public except for specific projects
+!become-the-consumer/public/
