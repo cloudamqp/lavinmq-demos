@@ -1,0 +1,13 @@
+Problem
+Let say, you have a system that handles tasks like image processing, sending emails or generating reports. If the applications in your system are communicating synchronously, your system can be slow. This is because claints wait and API is blocked.
+
+A common solution is to use background jobs.
+
+Instead of processing the task directly, the API sends it to a message queue, and the work is handled asynchronously.
+
+Client → API → LavinMQ → Worker
+
+The important part is that the API doesn’t do the heavy work—it just queues the task and responds immediately.
+
+
+The client still communicates synchronously with the API, but it only waits for the task to be queued—not for the actual processing.
