@@ -26,9 +26,19 @@ Perfect for learning how to build modern real-time applications with LavinMQ.
 
 [View Chat App Demo →](./chat-app)
 
----
+### 🦋 [Bluesky Streams](./bluesky-streams) _(Backend)_
 
-_More demos coming soon! Backend demos (Node.js workers, Ruby consumers, etc.) will be added with their own deployment instructions._
+A real-time stream of Bluesky activity to play with **LavinMQ stream filtering** on. The producer pipes the Bluesky Jetstream firehose (~250 msg/s) into a LavinMQ stream queue with header tags; the bundled viewer subscribes with `x-stream-filter` to receive only the slice you care about.
+
+- **Stream queues** - `x-queue-type: stream`, durable append-only log
+- **Stream filtering** - `x-stream-filter` matches on header tags broker-side
+- **Stream offsets** - `x-stream-offset` to replay from the beginning or tail live
+- **Policies** - `lavinmqctl set_policy` applies retention without touching producer code
+- **AMQP-over-WebSocket** - browser talks AMQP directly, no app server in the message path
+
+A nice way to see stream filtering, policies, and replay working on real, continuous data — `docker compose up` and you've got a broker, a producer, and a viewer.
+
+[View Bluesky Streams Demo →](./bluesky-streams)
 
 ## Getting Started
 
