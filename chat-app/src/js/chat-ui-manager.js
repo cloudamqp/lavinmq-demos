@@ -421,7 +421,7 @@ class ChatUIManager {
           <span class="message-author">${this.escapeHtml(message.username)}</span>
           <span class="message-timestamp">${this.formatTimestamp(message.timestamp)}</span>
         </div>
-        <div class="message-content">${this.escapeHtml(message.content)}</div>
+        <div class="message-content">${this.parseMessage(message.content)}</div>
       `;
     }
 
@@ -503,6 +503,19 @@ class ChatUIManager {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  linkify(text) {
+    const urlPattern = /(https?:\/\/[^\s<>]+)/gi;
+    return text.replace(urlPattern, (url) => {
+      return `<a class="message-link" href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+  }
+
+  parseMessage(text) {
+    let parsed = this.escapeHtml(text);
+    parsed = this.linkify(parsed);
+    return parsed;
   }
 
   async leaveChannel(channelName) {
