@@ -1,0 +1,13 @@
+{
+  "name": "become-the-consumer",
+  "version": "1.0.0",
+  "description": "Become the Consumer - A LavinMQ queue management mini-game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@cloudamqp/amqp-client": "^3.1.1",
+    "ws": "^8.14.2"
+  }
+}
