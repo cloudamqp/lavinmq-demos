@@ -23,8 +23,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'chat-app/package-lock.json'
 
-      - name: Build static demos
-        run: npm run deploy
+      # Temporary: demo.lavinmq.com redirects to lavinmq.com.
+      # To restore the demos, replace this step with `npm run deploy`.
+      - name: Build redirect page
+        run: node scripts/prepare-redirect.js
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
