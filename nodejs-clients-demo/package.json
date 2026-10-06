@@ -1,0 +1,31 @@
+{
+  "name": "rabbitmq-banking-worker-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "setup": "node setup.js",
+
+    "producer:amqplib": "AMQP_CLIENT=amqplib node producer.js",
+    "worker:amqplib": "AMQP_CLIENT=amqplib node worker.js",
+
+    "produce:amqp-client": "AMQP_CLIENT=amqp-client node producer.js",
+    "worker:amqp-client": "AMQP_CLIENT=amqp-client node worker.js",
+
+    "worker-manual-reconnection:amqplib": "node worker-manual-reconnection.js",
+    "produce-many:amqplib": "node produce-many.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@cloudamqp/amqp-client": "^4.1.1",
+    "amqplib": "^2.2.0",
+    "dotenv": "^17.4.2",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
