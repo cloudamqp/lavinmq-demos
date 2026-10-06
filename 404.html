@@ -1,21 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Redirecting...</title>
-  <script>
-    // GitHub Pages SPA redirect for /chat routes
-    const path = window.location.pathname;
-    if (path.startsWith('/chat')) {
-      // Preserve query params and redirect to /chat/
-      window.location.replace('/chat/' + window.location.search);
-    } else {
-      // For other 404s, redirect to home
-      window.location.replace('/');
-    }
-  </script>
+  <title>Redirecting to lavinmq.com</title>
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://lavinmq.com/">
+  <meta http-equiv="refresh" content="0; url=https://lavinmq.com/">
+  <script>location.replace("https://lavinmq.com/")</script>
 </head>
 <body>
-  <p>Redirecting...</p>
+  <p>This page has moved to <a href="https://lavinmq.com/">lavinmq.com</a>.</p>
 </body>
 </html>
