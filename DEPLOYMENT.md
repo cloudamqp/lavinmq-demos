@@ -51,12 +51,6 @@ Each service has its own deployment process - follow their documentation.
 
 ### Automatic Deployment
 
-> **Note:** demo.lavinmq.com is currently retired. The workflow publishes only a
-> redirect to https://lavinmq.com (`scripts/prepare-redirect.js`) instead of the
-> demos. To restore the demos, change the build step in `deploy.yml` back to
-> `npm run deploy`. Keep `cname: demo.lavinmq.com` in the workflow as long as the
-> DNS record points at GitHub Pages, otherwise the subdomain can be taken over.
-
 The repo includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds and deploys to GitHub Pages when you push to `main`. Enable GitHub Pages in your repo settings to use it.
 
 ## Environment Variables
