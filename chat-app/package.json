@@ -35,7 +35,7 @@
   "dependencies": {
     "@cloudamqp/amqp-client": "^3.1.1",
     "buffer": "^6.0.3",
-    "concurrently": "^9.2.4",
+    "concurrently": "^9.2.5",
     "jsdom": "^23.0.0",
     "ws": "^8.21.0"
   }
