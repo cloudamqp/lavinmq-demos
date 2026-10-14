@@ -30,6 +30,22 @@ Perfect for learning how to build modern real-time applications with LavinMQ.
 
 _More demos coming soon! Backend demos (Node.js workers, Ruby consumers, etc.) will be added with their own deployment instructions._
 
+### [Image Processing Demo](./image_processing_demo) _(Backend)_
+
+A background job processing demo showcasing:
+
+- **Asynchronous task processing** using LavinMQ queues
+- **FastAPI upload service** for receiving image uploads
+- **Worker-based architecture** using Python consumers
+- **Image transformations** such as grayscale, blur, and thumbnails
+- **Decoupled processing pipelines** using AMQP messaging
+
+The API publishes image-processing jobs to LavinMQ, while background workers consume and process the images asynchronously.
+
+Perfect for learning how to build queue-based background processing systems with LavinMQ.
+
+[View Image Processing Demo →](./image_processing_demo)
+
 ## Getting Started
 
 Each demo has its own README with setup instructions. To get started:
